@@ -43,24 +43,24 @@
             <form id="generatorForm">
                 <div class="form-group count-group">
                     <label for="count">產生數量（最多 100,000 筆）</label>
-                    <input type="number" id="count" class="form-control count-input" value="8" min="1" max="100000" required>
+                    <input type="number" id="count" name="count" class="form-control count-input" value="8" min="1" max="100000" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="codeLength">專屬碼長度（4-20 字元）</label>
-                    <input type="number" id="codeLength" class="form-control" value="8" min="4" max="20" required>
+                    <label for="code_length">專屬碼長度（4-20 字元）</label>
+                    <input type="number" id="code_length" name="code_length" class="form-control" value="8" min="4" max="20" required>
                 </div>
 
                 <div class="code-composition">
                     <div class="composition-title">專屬碼內容組成</div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="letterCount">英文字母數量</label>
-                            <input type="number" id="letterCount" class="form-control" min="0" max="20" placeholder="0 = 自動分配">
+                            <label for="letter_count">英文字母數量</label>
+                            <input type="number" id="letter_count" name="letter_count" class="form-control" min="0" max="20" placeholder="0 = 自動分配">
                         </div>
                         <div class="form-group">
-                            <label for="digitCount">數字數量</label>
-                            <input type="number" id="digitCount" class="form-control" min="0" max="20" placeholder="0 = 自動分配">
+                            <label for="digit_count">數字數量</label>
+                            <input type="number" id="digit_count" name="digit_count" class="form-control" min="0" max="20" placeholder="0 = 自動分配">
                         </div>
                     </div>
                     <div class="composition-note" style="font-size: 0.85rem; color: #888; margin-top: 8px;">
@@ -88,11 +88,21 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="prefix">前綴</label>
-                                    <input type="text" id="prefix" class="form-control" placeholder="例如: SALE" maxlength="10">
+                                    <input type="text" id="prefix" name="prefix" class="form-control" placeholder="例如: SALE" maxlength="10">
                                 </div>
                                 <div class="form-group">
+                                    <label for="prefix_connector">前綴連接符</label>
+                                    <input type="text" id="prefix_connector" name="prefix_connector" class="form-control" placeholder="例如: -" maxlength="3">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
                                     <label for="suffix">後綴</label>
-                                    <input type="text" id="suffix" class="form-control" placeholder="例如: 2024" maxlength="10">
+                                    <input type="text" id="suffix" name="suffix" class="form-control" placeholder="例如: 2024" maxlength="10">
+                                </div>
+                                <div class="form-group">
+                                    <label for="suffix_connector">後綴連接符</label>
+                                    <input type="text" id="suffix_connector" name="suffix_connector" class="form-control" placeholder="例如: _" maxlength="3">
                                 </div>
                             </div>
                         </div>

@@ -325,7 +325,6 @@ function generateCodes(count, length, letterCount, digitCount, prefix, suffix, p
 function updateProgress(percentage, current, total) {
   const progressBar = document.querySelector('.progress-bar');
   const progressText = document.querySelector('.progress-text');
-  const estimateText = document.querySelector('.estimate-text');
   
   if (progressBar) {
     progressBar.style.width = percentage + '%';
@@ -335,44 +334,44 @@ function updateProgress(percentage, current, total) {
     const lang = translations[currentLanguage] || translations['zh'];
     progressText.textContent = `${lang.progress_generating || '生成進度'}: ${current}/${total} (${percentage}%)`;
   }
-  
-  if (estimateText) {
-    const remaining = total - current;
-    const rate = current / 1; // 假設 1 秒生成 current 數量
-    const estimate = Math.ceil(remaining / (rate || 1000));
-    const lang = translations[currentLanguage] || translations['zh'];
-    estimateText.textContent = `${lang.estimated_time || '預估剩餘時間'}: ${estimate} ${lang.seconds || '秒'}`;
-  }
 }
 
 // 顯示結果
 function displayResults(codes) {
   generatedCodes = codes;
   
-  // 顯示前 50 個作為預覽
-  const previewList = document.getElementById('previewList');
-  if (previewList) {
-    previewList.innerHTML = '';
-    const previewCodes = codes.slice(0, 50);
+  // 顯示代碼在結果容器中
+  const codesContainer = document.getElementById('codesContainer');
+  if (codesContainer) {
+    // 顯示前 50 個作為預覽
+    const previewCodes = codes.slice(0, Math.min(50, codes.length));
+    let html = `<div class="codes-preview">
+      <h3>預覽前 ${previewCodes.length} 個專屬碼（共 ${codes.length} 個）：</h3>
+      <div class="codes-list">`;
+    
     previewCodes.forEach(code => {
-      const li = document.createElement('li');
-      li.textContent = code;
-      previewList.appendChild(li);
+      html += `<div class="code-item">${code}</div>`;
     });
+    
+    html += `</div>`;
+    
+    if (codes.length > 50) {
+      html += `<div class="more-codes-note">還有 ${codes.length - 50} 個專屬碼，請下載 CSV 檔案查看完整清單。</div>`;
+    }
+    
+    html += `</div>`;
+    codesContainer.innerHTML = html;
   }
   
-  // 更新統計
-  const totalCount = document.getElementById('totalCount');
-  const previewCount = document.getElementById('previewCount');
-  
-  if (totalCount) totalCount.textContent = codes.length;
-  if (previewCount) previewCount.textContent = Math.min(50, codes.length);
-  
   // 顯示結果區域
-  resultsSection.classList.add('show');
+  if (resultsSection) {
+    resultsSection.classList.add('show');
+  }
   
   // 隱藏進度區域
-  progressSection.classList.remove('show');
+  if (progressSection) {
+    progressSection.classList.remove('show');
+  }
   
   // 重置按鈕
   resetGenerateButton();
