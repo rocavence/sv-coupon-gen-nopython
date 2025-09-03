@@ -240,36 +240,47 @@ function updateFormValidationMessages() {
 }
 
 // 專屬碼生成邏輯
-function generateRandomCode(length, letterCount = 0, digitCount = 0) {
-  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const digits = '0123456789';
-  const allChars = letters + digits;
+function generateRandomCode(length, letterCount, digitCount) {
+  // 相容性：設定預設參數
+  if (typeof letterCount === 'undefined') letterCount = 0;
+  if (typeof digitCount === 'undefined') digitCount = 0;
   
-  let code = '';
+  var letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  var digits = '0123456789';
+  var allChars = letters + digits;
+  
+  var code = '';
   
   // 如果指定了字母和數字數量
   if (letterCount > 0 || digitCount > 0) {
     // 確保字母數量
-    for (let i = 0; i < letterCount; i++) {
+    for (var i = 0; i < letterCount; i++) {
       code += letters.charAt(Math.floor(Math.random() * letters.length));
     }
     
     // 確保數字數量
-    for (let i = 0; i < digitCount; i++) {
+    for (var j = 0; j < digitCount; j++) {
       code += digits.charAt(Math.floor(Math.random() * digits.length));
     }
     
     // 填充剩餘長度
-    const remaining = length - letterCount - digitCount;
-    for (let i = 0; i < remaining; i++) {
+    var remaining = length - letterCount - digitCount;
+    for (var k = 0; k < remaining; k++) {
       code += allChars.charAt(Math.floor(Math.random() * allChars.length));
     }
     
-    // 隨機打亂
-    code = code.split('').sort(() => Math.random() - 0.5).join('');
+    // 隨機打亂 - 使用相容性更好的方法
+    var codeArray = code.split('');
+    for (var m = codeArray.length - 1; m > 0; m--) {
+      var randomIndex = Math.floor(Math.random() * (m + 1));
+      var temp = codeArray[m];
+      codeArray[m] = codeArray[randomIndex];
+      codeArray[randomIndex] = temp;
+    }
+    code = codeArray.join('');
   } else {
     // 隨機生成
-    for (let i = 0; i < length; i++) {
+    for (var n = 0; n < length; n++) {
       code += allChars.charAt(Math.floor(Math.random() * allChars.length));
     }
   }
@@ -279,42 +290,62 @@ function generateRandomCode(length, letterCount = 0, digitCount = 0) {
 
 // 批量生成專屬碼
 function generateCodes(count, length, letterCount, digitCount, prefix, suffix, prefixConnector, suffixConnector) {
-  const codes = new Set();
-  const batchSize = 1000;
-  let generated = 0;
+  // 相容性：使用 Map 和 Array 組合代替 Set (更好的 IE11 支援)
+  var codesMap = {};
+  var codesArray = [];
+  var batchSize = Math.min(1000, Math.max(10, Math.floor(count / 100))); // 動態批次大小
+  var generated = 0;
   
-  return new Promise((resolve) => {
+  return new Promise(function(resolve, reject) {
+    // 清理舊的大數據，避免記憶體洩漏
+    if (generatedCodes.length > 50000) {
+      generatedCodes.length = 0;
+    }
+    
     function generateBatch() {
-      const startTime = Date.now();
-      const currentBatchSize = Math.min(batchSize, count - generated);
-      
-      for (let i = 0; i < currentBatchSize; i++) {
-        let attempts = 0;
-        let code;
+      try {
+        var startTime = Date.now();
+        var currentBatchSize = Math.min(batchSize, count - generated);
         
-        do {
-          const baseCode = generateRandomCode(length, letterCount, digitCount);
-          code = (prefix ? prefix + (prefixConnector || '') : '') + 
-                 baseCode + 
-                 (suffix ? (suffixConnector || '') + suffix : '');
-          attempts++;
-        } while (codes.has(code) && attempts < 100);
+        for (var i = 0; i < currentBatchSize; i++) {
+          var attempts = 0;
+          var code;
+          
+          do {
+            var baseCode = generateRandomCode(length, letterCount, digitCount);
+            code = (prefix ? prefix + (prefixConnector || '') : '') + 
+                   baseCode + 
+                   (suffix ? (suffixConnector || '') + suffix : '');
+            attempts++;
+            
+            // 防止無窮迴圈
+            if (attempts > 1000) {
+              reject(new Error('無法生成足夠的唯一代碼，請嘗試增加代碼長度或減少數量'));
+              return;
+            }
+          } while (codesMap.hasOwnProperty(code));
+          
+          codesMap[code] = true;
+          codesArray.push(code);
+        }
         
-        codes.add(code);
-      }
-      
-      generated += currentBatchSize;
-      
-      // 更新進度
-      const progress = Math.round((generated / count) * 100);
-      updateProgress(progress, generated, count);
-      
-      if (generated < count) {
-        // 下一批
-        setTimeout(generateBatch, 10);
-      } else {
-        // 完成
-        resolve(Array.from(codes));
+        generated += currentBatchSize;
+        
+        // 更新進度
+        var progress = Math.round((generated / count) * 100);
+        updateProgress(progress, generated, count);
+        
+        if (generated < count) {
+          // 下一批 - 給瀏覽器時間呼吸
+          var delay = (Date.now() - startTime > 100) ? 50 : 10;
+          setTimeout(generateBatch, delay);
+        } else {
+          // 完成 - 清理記憶體
+          codesMap = null;
+          resolve(codesArray);
+        }
+      } catch (error) {
+        reject(error);
       }
     }
     
@@ -342,26 +373,51 @@ function displayResults(codes) {
   generatedCodes = codes;
   
   // 顯示代碼在結果容器中
-  const codesContainer = document.getElementById('codesContainer');
+  var codesContainer = document.getElementById('codesContainer');
   if (codesContainer) {
+    // 清理舊內容
+    codesContainer.innerHTML = '';
+    
     // 顯示前 50 個作為預覽
-    const previewCodes = codes.slice(0, Math.min(50, codes.length));
-    let html = `<div class="codes-preview">
-      <h3>預覽前 ${previewCodes.length} 個專屬碼（共 ${codes.length} 個）：</h3>
-      <div class="codes-list">`;
+    var previewCodes = codes.slice(0, Math.min(50, codes.length));
+    var html = [];
     
-    previewCodes.forEach(code => {
-      html += `<div class="code-item">${code}</div>`;
-    });
+    html.push('<div class="codes-preview">');
+    html.push('<h3>預覽前 ' + previewCodes.length + ' 個專屬碼（共 ' + codes.length + ' 個）：</h3>');
+    html.push('<div class="codes-list">');
     
-    html += `</div>`;
+    // 使用文檔片段優化 DOM 操作
+    var fragment = document.createDocumentFragment();
+    var listDiv = document.createElement('div');
+    listDiv.className = 'codes-list';
     
-    if (codes.length > 50) {
-      html += `<div class="more-codes-note">還有 ${codes.length - 50} 個專屬碼，請下載 CSV 檔案查看完整清單。</div>`;
+    for (var i = 0; i < previewCodes.length; i++) {
+      var codeDiv = document.createElement('div');
+      codeDiv.className = 'code-item';
+      codeDiv.textContent = previewCodes[i];
+      listDiv.appendChild(codeDiv);
     }
     
-    html += `</div>`;
-    codesContainer.innerHTML = html;
+    var containerDiv = document.createElement('div');
+    containerDiv.className = 'codes-preview';
+    
+    var titleH3 = document.createElement('h3');
+    titleH3.textContent = '預覽前 ' + previewCodes.length + ' 個專屬碼（共 ' + codes.length + ' 個）：';
+    containerDiv.appendChild(titleH3);
+    containerDiv.appendChild(listDiv);
+    
+    if (codes.length > 50) {
+      var noteDiv = document.createElement('div');
+      noteDiv.className = 'more-codes-note';
+      noteDiv.textContent = '還有 ' + (codes.length - 50) + ' 個專屬碼，請下載 CSV 檔案查看完整清單。';
+      containerDiv.appendChild(noteDiv);
+    }
+    
+    codesContainer.appendChild(containerDiv);
+    
+    // 清理暫存變數
+    previewCodes = null;
+    fragment = null;
   }
   
   // 顯示結果區域
@@ -396,17 +452,22 @@ function downloadCSV() {
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   
-  if (link.download !== undefined) {
+  if (typeof link.download !== 'undefined') {
     // 產生檔案名稱: code_{代碼長度}_{代碼數量}_{yyyymmdd}
     const today = new Date();
-    const dateStr = today.getFullYear() + 
-                   String(today.getMonth() + 1).padStart(2, '0') + 
-                   String(today.getDate()).padStart(2, '0');
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1;
+    const day = today.getDate();
+    
+    // 相容性改進：不使用 padStart (IE11 不支援)
+    const dateStr = year + 
+                   (month < 10 ? '0' + month : month) + 
+                   (day < 10 ? '0' + day : day);
     
     const codeLength = lastGenerationParams ? lastGenerationParams.code_length : 8;
     const codeCount = generatedCodes.length;
     
-    const filename = `code_${codeLength}_${codeCount}_${dateStr}.csv`;
+    const filename = 'code_' + codeLength + '_' + codeCount + '_' + dateStr + '.csv';
     
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
@@ -415,6 +476,11 @@ function downloadCSV() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    // 記憶體清理：釋放 blob URL
+    setTimeout(function() {
+      URL.revokeObjectURL(url);
+    }, 100);
   }
 }
 
@@ -424,21 +490,44 @@ function showAlert(message, type = 'info') {
   alert(message);
 }
 
+// 清理記憶體函數
+function cleanupMemory() {
+  // 清理大型陣列
+  if (generatedCodes.length > 100000) {
+    generatedCodes.length = 0;
+  }
+  
+  // 清理參數物件
+  if (lastGenerationParams && Object.keys(lastGenerationParams).length > 20) {
+    lastGenerationParams = null;
+  }
+  
+  // 強制垃圾回收提示 (在支援的瀏覽器中)
+  if (window.gc && typeof window.gc === 'function') {
+    try {
+      window.gc();
+    } catch (e) {
+      // 忽略錯誤
+    }
+  }
+}
+
 // 表單提交處理
-async function handleFormSubmit(e) {
+function handleFormSubmit(e) {
   e.preventDefault();
   
-  const formData = new FormData(e.target);
-  const data = {
-    count: parseInt(formData.get('count')),
-    code_length: parseInt(formData.get('code_length')),
-    letter_count: parseInt(formData.get('letter_count')) || 0,
-    digit_count: parseInt(formData.get('digit_count')) || 0,
-    prefix: formData.get('prefix') || '',
-    suffix: formData.get('suffix') || '',
-    prefix_connector: formData.get('prefix_connector') || '',
-    suffix_connector: formData.get('suffix_connector') || ''
-  };
+  try {
+    var formData = new FormData(e.target);
+    var data = {
+      count: parseInt(formData.get('count'), 10) || 0,
+      code_length: parseInt(formData.get('code_length'), 10) || 0,
+      letter_count: parseInt(formData.get('letter_count'), 10) || 0,
+      digit_count: parseInt(formData.get('digit_count'), 10) || 0,
+      prefix: (formData.get('prefix') || '').toString(),
+      suffix: (formData.get('suffix') || '').toString(),
+      prefix_connector: (formData.get('prefix_connector') || '').toString(),
+      suffix_connector: (formData.get('suffix_connector') || '').toString()
+    };
   
   // 驗證
   if (data.count < 1 || data.count > 100000) {
@@ -464,11 +553,13 @@ async function handleFormSubmit(e) {
   progressSection.classList.add('show');
   resultsSection.classList.remove('show');
   
-  try {
+    // 清理記憶體
+    cleanupMemory();
+    
     // 保存生成參數用於檔案命名
     lastGenerationParams = data;
     
-    const codes = await generateCodes(
+    generateCodes(
       data.count,
       data.code_length,
       data.letter_count,
@@ -477,11 +568,15 @@ async function handleFormSubmit(e) {
       data.suffix,
       data.prefix_connector,
       data.suffix_connector
-    );
+    ).then(function(codes) {
+      displayResults(codes);
+    }).catch(function(error) {
+      showAlert('生成過程中發生錯誤: ' + error.message);
+      resetGenerateButton();
+    });
     
-    displayResults(codes);
   } catch (error) {
-    showAlert('生成過程中發生錯誤: ' + error.message);
+    showAlert('表單處理錯誤: ' + error.message);
     resetGenerateButton();
   }
 }
@@ -502,45 +597,65 @@ function toggleTheme() {
   }
 }
 
+// 頁面卸載清理
+function handlePageUnload() {
+  // 清理大型數據
+  generatedCodes.length = 0;
+  lastGenerationParams = null;
+  
+  // 嘗試清理記憶體
+  if (window.gc && typeof window.gc === 'function') {
+    try {
+      window.gc();
+    } catch (e) {
+      // 忽略錯誤
+    }
+  }
+}
+
 // 初始化
 document.addEventListener('DOMContentLoaded', function() {
+  // 綁定頁面卸載事件
+  window.addEventListener('beforeunload', handlePageUnload);
+  window.addEventListener('pagehide', handlePageUnload);
+  
   // 恢復主題設定
-  const savedTheme = localStorage.getItem('theme');
+  var savedTheme = localStorage.getItem('theme');
   if (savedTheme === 'dark') {
     document.body.classList.add('dark-theme');
-    const themeToggle = document.getElementById('themeToggle');
+    var themeToggle = document.getElementById('themeToggle');
     if (themeToggle) themeToggle.textContent = '🌞 淺色模式';
   }
   
   // 恢復語言設定
-  const savedLanguage = localStorage.getItem('language') || 'zh';
+  var savedLanguage = localStorage.getItem('language') || 'zh';
   switchLanguage(savedLanguage);
   
   // 更新版權年份
   updateCopyright();
   
   // 綁定事件
-  const form = document.getElementById('generatorForm');
+  var form = document.getElementById('generatorForm');
   if (form) {
     form.addEventListener('submit', handleFormSubmit);
   }
   
-  const themeToggle = document.getElementById('themeToggle');
+  var themeToggle = document.getElementById('themeToggle');
   if (themeToggle) {
     themeToggle.addEventListener('click', toggleTheme);
   }
   
-  const languageSwitch = document.getElementById('languageSwitch');
+  var languageSwitch = document.getElementById('languageSwitch');
   if (languageSwitch) {
     languageSwitch.addEventListener('click', function(e) {
       if (e.target.classList.contains('lang-option')) {
-        const lang = e.target.dataset.lang;
+        var lang = e.target.dataset.lang;
         switchLanguage(lang);
       }
     });
   }
   
-  const downloadBtn = document.getElementById('downloadBtn');
+  var downloadBtn = document.getElementById('downloadBtn');
   if (downloadBtn) {
     downloadBtn.addEventListener('click', downloadCSV);
   }
