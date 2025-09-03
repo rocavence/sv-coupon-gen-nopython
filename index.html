@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <!-- 技術相關 Meta 標籤 -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="StreetVoice 街聲">
+    <meta name="language" content="zh-TW">
+    
+    <!-- 基本 Meta 標籤 -->
+    <title>專屬碼產生器 | 免費線上工具</title>
+    <meta name="description" content="100% 免費專屬碼產生器！一次產生最多10萬組優惠碼、折扣碼、專屬碼，支援自訂長度、前後綴設定。所有代碼在瀏覽器本地產生，安全可靠，立即下載 CSV 檔案。powered by StreetVoice 街聲">
+    <meta name="keywords" content="促銷碼產生器,優惠碼產生器,折扣碼產生器,專屬碼產生,免費代碼工具,批量產生,CSV下載,電商促銷工具,購物優惠碼">
+
+    <!-- Open Graph 標籤 (Facebook, LINE 等社交媒體) -->
+    <meta property="og:title" content="專屬碼產生器 | 免費線上工具">
+    <meta property="og:description" content="100% 免費！快速產生大量專屬碼、優惠碼、折扣碼，支援自訂設定，本地執行更安全。電商必備工具，立即免費使用！powered by StreetVoice 街聲">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://sv-coupon-gen.onrender.com/">
+    <meta property="og:site_name" content="StreetVoice 街聲免費工具">
+
+    <!-- Twitter 卡片標籤 -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="專屬碼產生器 | 免費線上工具">
+    <meta name="twitter:description" content="100% 免費！快速產生大量專屬碼、優惠碼、折扣碼，電商必備工具。powered by StreetVoice 街聲">
+    
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="{{ url_for('static', filename='js/socket.io.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/download-effects.js') }}"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <h1>專屬碼產生器</h1>
+                <div class="subtitle">快速產生大量專屬碼</div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <form id="generatorForm">
+                <div class="form-group count-group">
+                    <label for="count">產生數量（最多 100,000 筆）</label>
+                    <input type="number" id="count" class="form-control count-input" value="8" min="1" max="100000" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="codeLength">專屬碼長度（4-20 字元）</label>
+                    <input type="number" id="codeLength" class="form-control" value="8" min="4" max="20" required>
+                </div>
+
+                <div class="code-composition">
+                    <div class="composition-title">專屬碼內容組成</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="letterCount">英文字母數量</label>
+                            <input type="number" id="letterCount" class="form-control" min="0" max="20" placeholder="0 = 自動分配">
+                        </div>
+                        <div class="form-group">
+                            <label for="digitCount">數字數量</label>
+                            <input type="number" id="digitCount" class="form-control" min="0" max="20" placeholder="0 = 自動分配">
+                        </div>
+                    </div>
+                    <div class="composition-note" style="font-size: 0.85rem; color: #888; margin-top: 8px;">
+                        留空或設為0會自動分配。英文+數字總數不能超過專屬碼長度。
+                    </div>
+
+                    <div class="collapsible-section">
+                        <div class="collapsible-header" id="advancedToggle">
+                            <span class="collapsible-title">進階設定</span>
+                            <span class="collapsible-icon">▼</span>
+                        </div>
+                        <div class="collapsible-content" id="advancedContent">
+                            <div class="form-group">
+                                <label for="letterCase">英文字母大小寫</label>
+                                <select id="letterCase" class="form-control">
+                                    <option value="uppercase">全部大寫</option>
+                                    <option value="lowercase">全部小寫</option>
+                                    <option value="mixed">大小寫混合</option>
+                                </select>
+                                <div class="case-note" style="font-size: 0.85rem; color: #888; margin-top: 5px;">
+                                    僅影響自動產生部分，不影響前後綴
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="prefix">前綴</label>
+                                    <input type="text" id="prefix" class="form-control" placeholder="例如: SALE" maxlength="10">
+                                </div>
+                                <div class="form-group">
+                                    <label for="suffix">後綴</label>
+                                    <input type="text" id="suffix" class="form-control" placeholder="例如: 2024" maxlength="10">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 即時預覽格式組成 -->
+                <div class="format-preview" id="formatPreview">
+                    <div class="preview-title">預覽格式</div>
+                    <div class="preview-content" id="previewContent">
+                        大寫英文字及數字 共8碼
+                    </div>
+                </div>
+
+                <button type="submit" class="btn" id="generateBtn">
+                    <span class="btn-text">開始產生</span>
+                </button>
+            </form>
+        </div>
+
+        <div id="alertContainer" class="alert-container"></div>
+
+        <div id="progressSection" class="progress-section">
+            <div class="progress-header">
+                <div class="progress-title">正在產生專屬碼...</div>
+            </div>
+            
+            <div class="progress-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="progressPercent">0%</div>
+                    <div class="stat-label">完成進度</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="completedCount">0</div>
+                    <div class="stat-label">已完成</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="estimatedTime">--</div>
+                    <div class="stat-label">預估剩餘時間（秒）</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="currentBatch">0</div>
+                    <div class="stat-label">當前批次</div>
+                </div>
+            </div>
+
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+            </div>
+            
+            <div class="progress-text" id="progressText">準備開始...</div>
+        </div>
+
+        <div id="resultsSection" class="results-section">
+            <div class="results-header">
+                <div class="results-title">產生完成！</div>
+            </div>
+            <div id="codesContainer" class="codes-container"></div>
+            <div class="results-footer">
+                <button class="restart-btn" id="restartBtn" onclick="location.reload()">重新來過</button>
+                <button class="download-btn" id="downloadBtn">下載完整 .CSV</button>
+            </div>
+        </div>
+
+        <div class="notice">
+            <div class="notice-icon">🔐</div>
+            <div class="notice-text" id="privacyText">
+                請放心！我們不會儲存你產生的專屬碼，<br>
+                所有專屬碼都在本地產生且只存在於你的瀏覽器中。
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>&copy; <span id="currentYear">2024</span> 專屬碼產生器 · powered by <a href="https://streetvoice.com" target="_blank">StreetVoice</a></p>
+            <p class="footer-note">所有功能均在瀏覽器端執行，確保您的資料安全。</p>
+        </div>
+    </div>
+
+    <div class="bottom-controls">
+        <div class="theme-toggle" id="themeToggle">🌚 深色模式</div>
+        <div class="language-switch" id="languageSwitch">
+            <span class="lang-option active" data-lang="zh">中文</span>
+            <span class="lang-option" data-lang="en">ENG</span>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
