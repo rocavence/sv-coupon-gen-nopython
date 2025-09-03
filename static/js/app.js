@@ -1,6 +1,7 @@
 // 純前端專屬碼生成器 - No Python 版本
 let currentTaskId = null;
 let generatedCodes = [];
+let lastGenerationParams = null;
 
 // 翻譯系統現在從 i18n.js 載入
 // translations 對象將從 i18n.js 提供
@@ -390,14 +391,26 @@ function resetGenerateButton() {
 function downloadCSV() {
   if (generatedCodes.length === 0) return;
   
-  const csvContent = 'code\n' + generatedCodes.join('\n');
+  // 移除 header，直接輸出代碼
+  const csvContent = generatedCodes.join('\n');
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   
   if (link.download !== undefined) {
+    // 產生檔案名稱: code_{代碼長度}_{代碼數量}_{yyyymmdd}
+    const today = new Date();
+    const dateStr = today.getFullYear() + 
+                   String(today.getMonth() + 1).padStart(2, '0') + 
+                   String(today.getDate()).padStart(2, '0');
+    
+    const codeLength = lastGenerationParams ? lastGenerationParams.code_length : 8;
+    const codeCount = generatedCodes.length;
+    
+    const filename = `code_${codeLength}_${codeCount}_${dateStr}.csv`;
+    
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `codes_${new Date().getTime()}.csv`);
+    link.setAttribute('download', filename);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -452,6 +465,9 @@ async function handleFormSubmit(e) {
   resultsSection.classList.remove('show');
   
   try {
+    // 保存生成參數用於檔案命名
+    lastGenerationParams = data;
+    
     const codes = await generateCodes(
       data.count,
       data.code_length,
