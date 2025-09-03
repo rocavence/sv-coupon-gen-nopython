@@ -1,6 +1,13 @@
 # 專屬碼生成器 (No-Python 版本)
 
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Demo-brightgreen)](https://rocavence.github.io/sv-coupon-gen-nopython/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 一個純前端的專屬碼生成器，採用街聲 LRC 工具風格，支援大量專屬碼生成、即時進度顯示和響應式設計。
+
+## 🌐 線上使用
+
+**[→ 立即使用 (GitHub Pages)](https://rocavence.github.io/sv-coupon-gen-nopython/)**
 
 ## 功能特色
 
@@ -11,32 +18,41 @@
 - 🎨 **雙主題支援**：深色/淺色主題可切換，無背景漸層干擾
 - 📱 **響應式設計**：支援各種螢幕尺寸
 - 🔐 **純前端處理**：所有專屬碼都在瀏覽器本地生成，無需伺服器
-- ⚡ **免安裝**：只需開啟 HTML 檔案即可使用
+- ⚡ **免安裝**：直接在瀏覽器中使用，無需下載安裝
+- 🌍 **多語言支援**：中文/英文介面切換
 
 ## 技術架構
 
 - **純前端**：原生 JavaScript + CSS3（響應式設計）
 - **本地處理**：所有邏輯都在瀏覽器中執行
 - **無伺服器依賴**：不需要 Python 或任何後端服務
+- **記憶體優化**：智能記憶體管理，防止洩漏
+- **瀏覽器相容**：支援 IE11+ 及所有現代瀏覽器
 
-## 使用步驟
+## 使用方式
 
-1. 直接開啟 `index.html` 檔案
-   - 可用任何現代瀏覽器開啟
-   - 支援本地檔案存取
+### 線上使用（推薦）
+直接訪問：**[https://rocavence.github.io/sv-coupon-gen-nopython/](https://rocavence.github.io/sv-coupon-gen-nopython/)**
 
-2. 或透過簡單 HTTP 伺服器：
+### 本地使用
+
+1. **直接開啟檔案**：
+   - 下載或 clone 此倉庫
+   - 直接用瀏覽器開啟 `index.html`
+
+2. **透過 HTTP 伺服器**：
    ```bash
-   # 使用 Python（如果有安裝）
+   # 使用 Python
    python -m http.server 8000
    
-   # 或使用 Node.js
+   # 使用 Node.js
    npx serve .
    
-   # 或任何其他靜態檔案伺服器
+   # 使用 PHP
+   php -S localhost:8000
    ```
 
-3. 開啟瀏覽器並開始使用
+3. **開啟瀏覽器並開始使用**
 
 ## 使用說明
 
